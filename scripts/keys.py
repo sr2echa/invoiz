@@ -7,7 +7,7 @@ import json
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 model = genai.GenerativeModel("gemini-1.5-flash")
-text=get_ocr_text(pdf_path = "/Users/toby/Downloads/sample-invoice.pdf")
+text=get_ocr_text(pdf_path = "/Users/harish/Developer/deloitte/invoiz/scripts/downloads/invoice_194cc7d42395c108/sample-invoice.pdf")
 def get_keys(text:str):
     prompt=f'''
     You are an intelligent document parser. Given the OCR text of an invoice, extract the following details:

@@ -28,7 +28,17 @@ def gmail_authenticate():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+            # Construct credentials dictionary from environment variables
+            credentials = {
+                "client_id": os.getenv("CLIENT_ID"),
+                "client_secret": os.getenv("CLIENT_SECRET"),
+                "auth_uri": os.getenv("AUTH_URI"),
+                "token_uri": os.getenv("TOKEN_URI"),
+                "auth_provider_x509_cert_url": os.getenv("AUTH_PROVIDER_X509_CERT_URL"),
+                "redirect_uris": [os.getenv("REDIRECT_URIS")],
+                "javascript_origins": [os.getenv("JAVASCRIPT_ORIGINS")]
+            }
+            flow = InstalledAppFlow.from_client_config({"installed": credentials}, SCOPES)
             creds = flow.run_local_server(port=0)
 
         with open("token.pickle", "wb") as token:
@@ -151,17 +161,9 @@ def read_message(service, message):
             if name.lower() == "subject":
                 has_subject = True
                 email_data["metadata"]["subject"] = value
-                folder_name = os.path.join(downloads_dir, clean(value))
-                folder_counter = 0
-                while os.path.isdir(folder_name):
-                    folder_counter += 1
-                    if folder_name[-1].isdigit() and folder_name[-2] == "_":
-                        folder_name = f"{folder_name[:-2]}_{folder_counter}"
-                    elif folder_name[-2:].isdigit() and folder_name[-3] == "_":
-                        folder_name = f"{folder_name[:-3]}_{folder_counter}"
-                    else:
-                        folder_name = f"{folder_name}_{folder_counter}"
-                os.mkdir(folder_name)
+                folder_name = os.path.join(downloads_dir, f"{clean(value)}_{message['id']}")
+                if not os.path.exists(folder_name):
+                    os.makedirs(folder_name)
             if name.lower() == "date":
                 email_data["metadata"]["date"] = value
     if not has_subject:
@@ -171,7 +173,7 @@ def read_message(service, message):
     email_data["folder"] = os.path.abspath(folder_name)
     return email_data
 
-def search_and_read(service, query, limit=5):
+def search_and_read(service, query="invoice", limit=5):
     messages = search_messages(service, query, limit)
     print("Total messages fetched: ", len(messages))
     emails_data = []
